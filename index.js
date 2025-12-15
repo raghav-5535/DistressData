@@ -7,21 +7,35 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Health check
+// --------------------
+// MAIN DOOR
+// --------------------
 app.get("/", (req, res) => {
   res.send("Distress Backend Live 🚀");
 });
 
-// Subscribe route
-app.post("/subscribe", async (req, res) => {
+// --------------------
+// HEALTH DOOR
+// --------------------
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "distress-backend",
+    time: new Date().toISOString()
+  });
+});
+
+// --------------------
+// EMAIL SIGNUP DOOR
+// --------------------
+app.post("/api/v1/subscribe", async (req, res) => {
   const { email } = req.body;
 
   if (!email || !email.includes("@")) {
-    return res.status(400).json({ error: "Invalid email address" });
+    return res.status(400).json({ error: "Invalid email" });
   }
 
   try {
@@ -38,33 +52,18 @@ app.post("/subscribe", async (req, res) => {
     await transporter.sendMail({
       from: process.env.FROM_EMAIL,
       to: email,
-      subject: "Welcome to Distress Deals",
-      html: `
-        <h2>Welcome 👋</h2>
-        <p>You’re now subscribed to <b>Distress Deals</b>.</p>
-        <p>We share off-market real estate opportunities with serious investors only.</p>
-        <p><b>Watch your inbox.</b></p>
-      `
+      subject: "Welcome to Phoenix Hotlist",
+      html: `<h3>You’re subscribed 🎉</h3>`
     });
 
-    res.json({ success: true, message: "Subscription successful" });
+    res.json({ success: true });
 
   } catch (err) {
-    console.error("Email error:", err);
-    res.status(500).json({ error: "Failed to send email" });
+    res.status(500).json({ error: "Email failed" });
   }
 });
 
-// Server
 const PORT = process.env.PORT || 10000;
-app.get("/", (req, res) => {
-  res.json({
-    status: "ok",
-    service: "Phoenix Hotlist Backend",
-    time: new Date().toISOString()
-  });
-});
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
