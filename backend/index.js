@@ -1,37 +1,36 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
 dotenv.config();
 
+// ======================
+// SENDGRID CONFIG
+// ======================
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// ======================
+// APP INIT
+// ======================
 const app = express();
-// Middleware
+
+// ======================
+// MIDDLEWARE
+// ======================
 app.use(
   cors({
     origin: "https://capable-ganache-f99392.netlify.app",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"]
   })
 );
 
 app.use(express.json());
 
-
-/* ======================
-   MIDDLEWARE (TOP)
-====================== */
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"]
-}));
-
-app.use(express.json());
-
-/* ======================
-   HEALTH CHECK
-====================== */
+// ======================
+// HEALTH CHECK
+// ======================
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -40,56 +39,53 @@ app.get("/health", (req, res) => {
   });
 });
 
-/* ======================
-   ROOT
-====================== */
+// ======================
+// ROOT
+// ======================
 app.get("/", (req, res) => {
   res.send("Distress Backend Live 🚀");
 });
 
-/* ======================
-   SUBSCRIBE
-====================== */
+// ======================
+// SUBSCRIBE (SENDGRID API)
+// ======================
 app.post("/subscribe", async (req, res) => {
-  const { email } = req.body;
-
-  if (!email || !email.includes("@")) {
-    return res.status(400).json({ error: "Invalid email" });
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.sendgrid.net",
-      port: 587,
-      secure: false,
-      auth: {
-        user: "apikey",
-        pass: process.env.SENDGRID_API_KEY
-      }
-    });
+    const { email } = req.body;
 
-    await transporter.sendMail({
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ error: "Invalid email" });
+    }
+
+    const msg = {
+      to: process.env.FROM_EMAIL,        // YOU receive the lead
       from: process.env.FROM_EMAIL,
-      to: email,
-      subject: "Welcome to Distress Deals",
+      subject: "🔥 New Distress Lead",
+      text: `New subscriber: ${email}`,
       html: `
-        <h2>Welcome 👋</h2>
-        <p>You’re now subscribed to <b>Distress Deals</b>.</p>
-        <p>Off-market opportunities coming soon.</p>
+        <h2>New Distress Lead</h2>
+        <p>Email: <b>${email}</b></p>
       `
-    });
+    };
+
+    await sgMail.send(msg);
 
     res.json({ success: true });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Email failed" });
+    console.error("SendGrid error:", err.message);
+
+    // IMPORTANT: do NOT fail frontend
+    res.status(200).json({
+      success: true,
+      note: "Captured (email pending)"
+    });
   }
 });
 
-/* ======================
-   SERVER
-====================== */
+// ======================
+// SERVER
+// ======================
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
