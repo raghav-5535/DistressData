@@ -6,6 +6,17 @@ import nodemailer from "nodemailer";
 dotenv.config();
 
 const app = express();
+// Middleware
+app.use(
+  cors({
+    origin: "https://capable-ganache-f99392.netlify.app",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"]
+  })
+);
+
+app.use(express.json());
+
 
 /* ======================
    MIDDLEWARE (TOP)
