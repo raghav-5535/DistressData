@@ -6,37 +6,31 @@ import sgMail from "@sendgrid/mail";
 dotenv.config();
 
 // ======================
-// SENDGRID CONFIG
+// SENDGRID
 // ======================
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // ======================
-// APP INIT
+// APP
 // ======================
 const app = express();
 
 // ======================
 // MIDDLEWARE
 // ======================
-app.use(
-  cors({
-    origin: "https://capable-ganache-f99392.netlify.app",
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"]
-  })
-);
+app.use(cors({
+  origin: "https://capable-ganache-f99392.netlify.app",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+}));
 
 app.use(express.json());
 
 // ======================
-// HEALTH CHECK
+// HEALTH
 // ======================
 app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    service: "distress-backend",
-    time: new Date().toISOString()
-  });
+  res.json({ status: "ok" });
 });
 
 // ======================
@@ -47,39 +41,43 @@ app.get("/", (req, res) => {
 });
 
 // ======================
-// SUBSCRIBE (SENDGRID API)
+// SUBSCRIBE
 // ======================
 app.post("/subscribe", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !email.includes("@")) {
+    return res.status(400).json({ error: "Invalid email" });
+  }
+
   try {
-    const { email } = req.body;
-
-    if (!email || !email.includes("@")) {
-      return res.status(400).json({ error: "Invalid email" });
-    }
-
-    const msg = {
-      to: process.env.FROM_EMAIL,        // YOU receive the lead
+    // 1️⃣ EMAIL TO YOU (LEAD)
+    await sgMail.send({
+      to: process.env.FROM_EMAIL,
       from: process.env.FROM_EMAIL,
-      subject: "🔥 New Distress Lead",
-      text: `New subscriber: ${email}`,
-      html: `
-        <h2>New Distress Lead</h2>
-        <p>Email: <b>${email}</b></p>
-      `
-    };
+      subject: "🔥 New Phoenix Hotlist Lead",
+      html: `<p>New subscriber: <b>${email}</b></p>`
+    });
 
-    await sgMail.send(msg);
+    // 2️⃣ EMAIL TO USER (WELCOME)
+    await sgMail.send({
+      to: email,
+      from: process.env.FROM_EMAIL,
+      subject: "Welcome to Phoenix Hotlist 🚀",
+      html: `
+        <h2>You're In 🔥</h2>
+        <p>You'll now receive off-market & distress deals.</p>
+        <p><b>Phoenix Hotlist Team</b></p>
+      `
+    });
 
     res.json({ success: true });
 
   } catch (err) {
-    console.error("SendGrid error:", err.message);
+    console.error("SendGrid error:", err);
 
-    // IMPORTANT: do NOT fail frontend
-    res.status(200).json({
-      success: true,
-      note: "Captured (email pending)"
-    });
+    // NEVER break frontend UX
+    res.json({ success: true });
   }
 });
 
@@ -89,5 +87,5 @@ app.post("/subscribe", async (req, res) => {
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on ${PORT}`);
 });

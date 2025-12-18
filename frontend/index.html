@@ -249,44 +249,44 @@
   </div>
 
   <script>
-    const btn = document.getElementById("subscribeBtn");
-    const emailInput = document.getElementById("emailInput");
-    const msg = document.getElementById("msg");
+  const btn = document.getElementById("subscribeBtn");
+  const emailInput = document.getElementById("emailInput");
+  const msg = document.getElementById("msg");
 
-    btn.addEventListener("click", async () => {
-      const email = emailInput.value.trim();
+  btn.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
 
-      if (!email || !email.includes("@")) {
-        msg.innerText = "Enter a valid email.";
-        return;
-      }
+    if (!email || !email.includes("@")) {
+      msg.innerText = "Enter a valid email.";
+      return;
+    }
 
-      msg.innerText = "Submitting...";
+    btn.disabled = true;
+    msg.innerText = "Submitting...";
 
-      try {
-        const res = await fetch(
-          "https://distress-backend-sj8y.onrender.com/subscribe"
-,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email })
-          }
-        );
-
-        const data = await res.json();
-
-        if (res.ok) {
-          msg.innerText = "✅ Check your inbox. You're in.";
-          emailInput.value = "";
-        } else {
-          msg.innerText = data.error || "Something went wrong.";
+    try {
+      const res = await fetch(
+        "https://distress-backend-sj8y.onrender.com/subscribe",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
         }
-      } catch {
-        msg.innerText = "Server offline. Try later.";
-      }
-    });
-  </script>
+      );
+
+      await res.json();
+
+      msg.innerText = "✅ Check your inbox. You're in.";
+      emailInput.value = "";
+
+    } catch {
+      msg.innerText = "Server error. Try again later.";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+
 
 </body>
 </html>
