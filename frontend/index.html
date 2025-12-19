@@ -1,292 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Phoenix Hotlist — Luxury AI Real Estate</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phoenix Hotlist — Luxury AI Real Estate</title>
 
-  <!-- SEO -->
-  <meta name="description" content="AI-powered off-market & distressed real estate deals for serious investors." />
-
-  <style>
-    :root {
-      --gold: #d4af37;
-      --gold-light: #f5e6a8;
-      --black: #0b0b0b;
-      --glass: rgba(255, 255, 255, 0.08);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: "Segoe UI", sans-serif;
-    }
-
-    body {
-      background: linear-gradient(135deg, #050505, #121212);
-      color: #fff;
-      overflow-x: hidden;
-    }
-
-    nav {
-      position: fixed;
-      top: 0;
-      width: 100%;
-      z-index: 1000;
-      padding: 18px 60px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo span {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--gold);
-    }
-
-    nav a {
-      color: #fff;
-      text-decoration: none;
-      margin-left: 28px;
-      font-weight: 500;
-    }
-
-    nav a:hover {
-      color: var(--gold);
-    }
-
-    .hero {
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 120px 20px 60px;
-      background: url("https://images.unsplash.com/photo-1523217582562-09d0def993a6")
-        center/cover no-repeat;
-      position: relative;
-    }
-
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-    }
-
-    .hero-content {
-      position: relative;
-      max-width: 900px;
-      text-align: center;
-      padding: 60px;
-      background: var(--glass);
-      border-radius: 24px;
-      backdrop-filter: blur(18px);
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
-    }
-
-    .hero h1 {
-      font-size: 56px;
-      line-height: 1.1;
-      color: var(--gold);
-    }
-
-    .hero p {
-      margin: 25px 0 35px;
-      font-size: 20px;
-      color: #ddd;
-    }
-
-    .btn {
-      padding: 16px 40px;
-      border-radius: 40px;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--gold), var(--gold-light));
-      color: #000;
-      text-decoration: none;
-      display: inline-block;
-      box-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
-      border: none;
-      cursor: pointer;
-    }
-
-    section {
-      padding: 120px 80px;
-    }
-
-    .section-title {
-      text-align: center;
-      font-size: 40px;
-      margin-bottom: 60px;
-      color: var(--gold);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 40px;
-    }
-
-    .card {
-      background: var(--glass);
-      padding: 40px;
-      border-radius: 22px;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
-    }
-
-    .email-box input {
-      padding: 14px 20px;
-      width: 280px;
-      border-radius: 30px;
-      border: none;
-      margin-right: 10px;
-    }
-
-    footer {
-      padding: 40px;
-      text-align: center;
-      background: #050505;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    footer p {
-      color: #aaa;
-      font-size: 14px;
-    }
-
-    .floating-cta {
-      position: fixed;
-      bottom: 25px;
-      right: 25px;
-      z-index: 2000;
-    }
-
-    @media (max-width: 768px) {
-      nav {
-        padding: 18px 25px;
-      }
-      section {
-        padding: 90px 25px;
-      }
-      .hero h1 {
-        font-size: 38px;
-      }
-    }
-  </style>
+<style>
+body {
+  background:#0b0b0b;
+  color:white;
+  font-family:Segoe UI, sans-serif;
+  text-align:center;
+  padding:60px 20px;
+}
+h1 { color:#d4af37; }
+input {
+  padding:12px;
+  width:260px;
+  border-radius:25px;
+  border:none;
+}
+button {
+  padding:12px 30px;
+  border-radius:25px;
+  border:none;
+  background:#d4af37;
+  font-weight:bold;
+  cursor:pointer;
+}
+#msg { margin-top:15px; color:#d4af37; }
+</style>
 </head>
+
 <body>
 
-  <nav>
-    <div class="logo">
-      <span>Phoenix Hotlist</span>
-    </div>
-    <div>
-      <a href="#how">How</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#contact">Contact</a>
-    </div>
-  </nav>
+<h1>Phoenix Hotlist</h1>
+<p>AI-powered off-market & distressed deals</p>
 
-  <div class="hero">
-    <div class="hero-content">
-      <h1>AI-Powered Luxury Property Intelligence</h1>
-      <p>Off-market & distressed deals curated daily for serious investors.</p>
-      <a href="#pricing" class="btn">Unlock Hotlist</a>
-    </div>
-  </div>
+<p id="counter">🔥 Loading investors...</p>
 
-  <section id="how">
-    <h2 class="section-title">How It Works</h2>
-    <div class="grid">
-      <div class="card"><h3>AI Scanning</h3><p>Distress, foreclosure & probate signals.</p></div>
-      <div class="card"><h3>Smart Filtering</h3><p>Only high-ROI deals survive.</p></div>
-      <div class="card"><h3>Instant Delivery</h3><p>Deals sent directly to you.</p></div>
-    </div>
-  </section>
+<br>
 
-  <section id="pricing">
-    <h2 class="section-title">Access Plans</h2>
-    <div class="grid">
-      <div class="card">
-        <h3>Monthly</h3>
-        <p>$49 / month</p>
-        <a class="btn" href="#">Buy</a>
-      </div>
-      <div class="card">
-        <h3>Annual Elite</h3>
-        <p>$499 / year</p>
-        <a class="btn" href="#">Buy</a>
-      </div>
-    </div>
-  </section>
+<input id="email" type="email" placeholder="Enter your email">
+<br><br>
+<button id="btn">Send Me Deals</button>
 
-  <section id="contact">
-    <h2 class="section-title">Get Free Sample Deals</h2>
-    <div style="text-align:center" class="email-box">
-      <input type="email" id="emailInput" placeholder="Enter your email" />
-      <button class="btn" id="subscribeBtn">Send Me Deals</button>
-      <p id="msg" style="margin-top:15px;color:#d4af37;"></p>
-    </div>
-  </section>
+<p id="msg"></p>
 
-  <footer>
-    <p>© 2025 Phoenix Hotlist · Built for Serious Investors</p>
-  </footer>
+<script>
+const API = "https://distress-backend-sj8y.onrender.com";
 
-  <div class="floating-cta">
-    <a class="btn" href="#pricing">Join Now</a>
-  </div>
+fetch(API + "/stats")
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById("counter").innerText =
+      `🔥 ${d.totalSubscribers} investors joined`;
+  });
 
-  <script>
-  const btn = document.getElementById("subscribeBtn");
-  const emailInput = document.getElementById("emailInput");
+document.getElementById("btn").onclick = async () => {
+  const email = document.getElementById("email").value;
   const msg = document.getElementById("msg");
 
-  btn.addEventListener("click", async () => {
-    const email = emailInput.value.trim();
+  if (!email.includes("@")) {
+    msg.innerText = "Enter a valid email";
+    return;
+  }
 
-    if (!email || !email.includes("@")) {
-      msg.innerText = "Enter a valid email.";
-      return;
-    }
+  msg.innerText = "Submitting...";
 
-    btn.disabled = true;
-    msg.innerText = "Submitting...";
+  try {
+    const res = await fetch(API + "/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
 
-    try {
-      const res = await fetch(
-        "https://distress-backend-sj8y.onrender.com/subscribe",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email })
-        }
-      );
+    const data = await res.json();
 
-      await res.json();
+    msg.innerText = "✅ Check inbox (or spam). You’re in.";
+    document.getElementById("email").value = "";
 
-      msg.innerText = "✅ Check your inbox. You're in.";
-      emailInput.value = "";
-
-    } catch {
-      msg.innerText = "Server error. Try again later.";
-    } finally {
-      btn.disabled = false;
-    }
-  });
+  } catch {
+    msg.innerText = "Server offline. Try later.";
+  }
+};
 </script>
-
 
 </body>
 </html>
