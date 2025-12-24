@@ -2,27 +2,35 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
-import axios from "axios";
+import fetch from "node-fetch";
 
 dotenv.config();
-
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const app = express();
 
+/* ======================
+   MIDDLEWARE
+====================== */
 app.use(cors({
   origin: "https://capable-ganache-f99392.netlify.app",
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
-
 app.use(express.json());
 
 /* ======================
-   HEALTH
+   HEALTH CHECK
 ====================== */
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+/* ======================
+   ROOT
+====================== */
+app.get("/", (req, res) => {
+  res.send("Distress Backend Live 🚀");
 });
 
 /* ======================
@@ -36,39 +44,47 @@ app.post("/subscribe", async (req, res) => {
   }
 
   try {
-    // 1️⃣ Store in SendGrid Contacts (DB replacement)
-    await axios.put(
-      "https://api.sendgrid.com/v3/marketing/contacts",
-      {
-        contacts: [{ email }]
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    // 2️⃣ Send confirmation email
     await sgMail.send({
-      to: email,
+      to: process.env.FROM_EMAIL,
       from: process.env.FROM_EMAIL,
-      subject: "You're in 🔥 Phoenix Hotlist",
-      html: `
-        <h2>Welcome 👋</h2>
-        <p>You’re subscribed to <b>Phoenix Hotlist</b>.</p>
-        <p>Exclusive distressed deals coming soon.</p>
-      `
+      subject: "🔥 New Distress Lead",
+      html: `<p>New signup: <b>${email}</b></p>`
     });
 
     res.json({ success: true });
+  } catch (err) {
+    console.error("SendGrid error:", err.message);
+    res.json({ success: true });
+  }
+});
+
+/* ======================
+   ADMIN STATS (PRIVATE)
+====================== */
+app.get("/admin/stats", async (req, res) => {
+  const key = req.query.key;
+
+  if (key !== process.env.ADMIN_SECRET) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const response = await fetch("https://api.sendgrid.com/v3/marketing/contacts", {
+      headers: {
+        Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`
+      }
+    });
+
+    const data = await response.json();
+
+    res.json({
+      total: data.contact_count || 0,
+      contacts: data.result?.slice(0, 20) || []
+    });
 
   } catch (err) {
-    console.error("SendGrid error:", err.response?.data || err.message);
-
-    // Do NOT block frontend
-    res.status(200).json({ success: true });
+    console.error(err);
+    res.status(500).json({ error: "Admin fetch failed" });
   }
 });
 
