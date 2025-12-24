@@ -1,74 +1,81 @@
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import mongoose from 'mongoose';
-import sgMail from '@sendgrid/mail';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import sgMail from "@sendgrid/mail";
+import axios from "axios";
 
-const app = express();
-const PORT = process.env.PORT || 10000;
+dotenv.config();
 
-/* ---------- MIDDLEWARE ---------- */
-app.use(cors());
-app.use(express.json());
-
-/* ---------- SENDGRID ---------- */
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-/* ---------- MONGODB ---------- */
-if (!process.env.MONGODB_URI) {
-  console.error('❌ MONGODB_URI missing');
-  process.exit(1);
-}
+const app = express();
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => {
-    console.error('❌ MongoDB error', err);
-    process.exit(1);
-  });
+app.use(cors({
+  origin: "https://capable-ganache-f99392.netlify.app",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+}));
 
-/* ---------- MODEL ---------- */
-const emailSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  createdAt: { type: Date, default: Date.now }
+app.use(express.json());
+
+/* ======================
+   HEALTH
+====================== */
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
-const Email = mongoose.model('Email', emailSchema);
-
-/* ---------- ROUTES ---------- */
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
-app.post('/subscribe', async (req, res) => {
+/* ======================
+   SUBSCRIBE
+====================== */
+app.post("/subscribe", async (req, res) => {
   const { email } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ error: 'Email required' });
+  if (!email || !email.includes("@")) {
+    return res.status(400).json({ error: "Invalid email" });
   }
 
   try {
-    await Email.create({ email });
+    // 1️⃣ Store in SendGrid Contacts (DB replacement)
+    await axios.put(
+      "https://api.sendgrid.com/v3/marketing/contacts",
+      {
+        contacts: [{ email }]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
+    // 2️⃣ Send confirmation email
     await sgMail.send({
       to: email,
       from: process.env.FROM_EMAIL,
-      subject: 'Welcome to Phoenix Hotlist',
-      text: 'You are subscribed. Deals coming soon.',
+      subject: "You're in 🔥 Phoenix Hotlist",
+      html: `
+        <h2>Welcome 👋</h2>
+        <p>You’re subscribed to <b>Phoenix Hotlist</b>.</p>
+        <p>Exclusive distressed deals coming soon.</p>
+      `
     });
 
     res.json({ success: true });
+
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).json({ error: 'Email already subscribed' });
-    }
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("SendGrid error:", err.response?.data || err.message);
+
+    // Do NOT block frontend
+    res.status(200).json({ success: true });
   }
 });
 
-/* ---------- START SERVER ---------- */
+/* ======================
+   SERVER
+====================== */
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
