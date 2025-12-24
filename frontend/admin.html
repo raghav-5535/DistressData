@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 40px; }
+    h1 { color: #d4af37; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    td, th { border: 1px solid #ddd; padding: 10px; }
+  </style>
+</head>
+<body>
+
+<h1>📊 Distress Admin Dashboard</h1>
+<p>Total Signups: <b id="count">Loading...</b></p>
+
+<table>
+  <thead>
+    <tr><th>Email</th></tr>
+  </thead>
+  <tbody id="list"></tbody>
+</table>
+
+<script>
+const SECRET = "supersecret123"; // same as ADMIN_SECRET
+
+fetch(`https://distress-backend-sj8y.onrender.com/admin/stats?key=${SECRET}`)
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("count").innerText = data.total;
+    const tbody = document.getElementById("list");
+
+    data.contacts.forEach(c => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${c.email}</td>`;
+      tbody.appendChild(tr);
+    });
+  })
+  .catch(() => {
+    document.body.innerHTML = "<h2>Access denied</h2>";
+  });
+</script>
+
+</body>
+</html>
