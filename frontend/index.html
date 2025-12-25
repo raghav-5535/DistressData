@@ -13,13 +13,24 @@ body {
   text-align:center;
   padding:60px 20px;
 }
-h1 { color:#d4af37; }
+
+h1 {
+  color:#d4af37;
+  font-size:42px;
+}
+
+p {
+  color:#ccc;
+}
+
 input {
   padding:12px;
   width:260px;
   border-radius:25px;
   border:none;
+  margin-bottom:12px;
 }
+
 button {
   padding:12px 30px;
   border-radius:25px;
@@ -28,57 +39,67 @@ button {
   font-weight:bold;
   cursor:pointer;
 }
-#msg { margin-top:15px; color:#d4af37; }
+
+button:hover {
+  opacity:0.9;
+}
+
+#msg {
+  margin-top:15px;
+  color:#d4af37;
+  font-weight:500;
+}
 </style>
 </head>
 
 <body>
 
 <h1>Phoenix Hotlist</h1>
-<p>AI-powered off-market & distressed deals</p>
+<p>AI-powered off-market & distressed US real estate deals</p>
 
-<p id="counter">🔥 Loading investors...</p>
+<p id="counter">🔥 Reviewing serious investors only</p>
 
 <br>
 
-<input id="email" type="email" placeholder="Enter your email">
-<br><br>
-<button id="btn">Send Me Deals</button>
+<input id="email" type="email" placeholder="Your email"><br>
+<input id="country" type="text" placeholder="Country (US preferred)"><br>
+<input id="budget" type="text" placeholder="Investment budget (USD)"><br><br>
+
+<button id="btn">Apply for Early Access</button>
 
 <p id="msg"></p>
 
 <script>
 const API = "https://distress-backend-sj8y.onrender.com";
 
-fetch(API + "/stats")
-  .then(r => r.json())
-  .then(d => {
-    document.getElementById("counter").innerText =
-      `🔥 ${d.totalSubscribers} investors joined`;
-  });
-
 document.getElementById("btn").onclick = async () => {
-  const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value.trim();
+  const country = document.getElementById("country").value.trim();
+  const budget = document.getElementById("budget").value.trim();
   const msg = document.getElementById("msg");
 
-  if (!email.includes("@")) {
+  if (!email || !email.includes("@")) {
     msg.innerText = "Enter a valid email";
     return;
   }
 
-  msg.innerText = "Submitting...";
+  msg.innerText = "Submitting application...";
 
   try {
-    const res = await fetch(API + "/subscribe", {
+    const res = await fetch(API + "/apply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, country, budget })
     });
 
-    const data = await res.json();
-
-    msg.innerText = "✅ Check inbox (or spam). You’re in.";
-    document.getElementById("email").value = "";
+    if (res.ok) {
+      msg.innerText = "✅ Application received. Check your inbox.";
+      document.getElementById("email").value = "";
+      document.getElementById("country").value = "";
+      document.getElementById("budget").value = "";
+    } else {
+      msg.innerText = "Something went wrong. Try again.";
+    }
 
   } catch {
     msg.innerText = "Server offline. Try later.";
