@@ -3,49 +3,46 @@
 <head>
   <title>Admin Dashboard</title>
   <style>
-    body { font-family: Arial; padding: 40px; }
+    body { font-family: Arial; padding: 40px; background:#0b0b0b; color:white; }
     h1 { color: #d4af37; }
-    input, button {
-      padding: 10px;
-      margin-top: 10px;
-    }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    td, th { border: 1px solid #444; padding: 10px; }
   </style>
 </head>
 <body>
 
-<h1>📊 Phoenix Admin</h1>
+<h1>📊 Phoenix Admin Dashboard</h1>
+<p>Total Signups: <b id="count">Loading...</b></p>
 
-<p>Unlock paid user:</p>
-<input id="email" placeholder="user@email.com">
-<br>
-<button onclick="unlock()">Unlock Access</button>
-
-<p id="msg"></p>
+<table>
+  <thead>
+    <tr><th>Email</th><th>Time</th></tr>
+  </thead>
+  <tbody id="list"></tbody>
+</table>
 
 <script>
+const SECRET = "supersecret123";
 const API = "https://distress-backend-sj8y.onrender.com";
-const ADMIN_KEY = "supersecret123";
 
-function unlock() {
-  const email = document.getElementById("email").value;
-
-  fetch(API + "/admin/unlock", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-key": ADMIN_KEY
-    },
-    body: JSON.stringify({ email })
+fetch(`${API}/admin/stats?key=${SECRET}`)
+  .then(res => {
+    if (!res.ok) throw new Error("Unauthorized");
+    return res.json();
   })
-  .then(r => r.json())
-  .then(d => {
-    document.getElementById("msg").innerText =
-      "Unlocked: " + d.unlocked;
+  .then(data => {
+    document.getElementById("count").innerText = data.total;
+    const tbody = document.getElementById("list");
+
+    data.contacts.forEach(c => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${c.email}</td><td>${new Date(c.time).toLocaleString()}</td>`;
+      tbody.appendChild(tr);
+    });
   })
   .catch(() => {
-    document.getElementById("msg").innerText = "Failed";
+    document.body.innerHTML = "<h2>❌ Access Denied</h2>";
   });
-}
 </script>
 
 </body>
