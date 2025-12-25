@@ -10,6 +10,7 @@ const app = express();
 
 /* ======================
    TEMP STORAGE (NO DB)
+   NOTE: resets on redeploy
 ====================== */
 const subscribers = [];
 const paidUsers = new Set();
@@ -18,8 +19,8 @@ const paidUsers = new Set();
    MIDDLEWARE
 ====================== */
 app.use(cors({
-  origin: "https://capable-ganache-f99392.netlify.app",
-  methods: ["GET", "POST"]
+  origin: "*",
+  methods: ["GET", "POST"],
 }));
 app.use(express.json());
 
@@ -27,11 +28,11 @@ app.use(express.json());
    HEALTH
 ====================== */
 app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", service: "distress-backend" });
 });
 
 /* ======================
-   SUBSCRIBE
+   SUBSCRIBE (LEAD CAPTURE)
 ====================== */
 app.post("/subscribe", async (req, res) => {
   const { email } = req.body;
@@ -43,41 +44,47 @@ app.post("/subscribe", async (req, res) => {
   if (!subscribers.includes(email)) {
     subscribers.push(email);
 
-    // notify YOU
-    await sgMail.send({
-      to: process.env.FROM_EMAIL,
-      from: process.env.FROM_EMAIL,
-      subject: "🔥 New Phoenix Lead",
-      html: `<p>${email}</p>`
-    });
+    // Notify YOU
+    try {
+      await sgMail.send({
+        to: process.env.FROM_EMAIL,
+        from: process.env.FROM_EMAIL,
+        subject: "🔥 New Phoenix Lead",
+        html: `<p><b>${email}</b> just subscribed.</p>`
+      });
+    } catch (err) {
+      console.error("SendGrid error:", err.message);
+    }
   }
 
   res.json({ success: true });
 });
 
 /* ======================
-   CHECK ACCESS
+   ACCESS CHECK
 ====================== */
 app.post("/access", (req, res) => {
   const { email } = req.body;
+
   if (paidUsers.has(email)) {
-    res.json({ access: "granted" });
-  } else {
-    res.json({ access: "locked" });
+    return res.json({ access: "granted" });
   }
+
+  res.json({ access: "locked" });
 });
 
 /* ======================
-   ADMIN UNLOCK
+   ADMIN: UNLOCK PAID USER
 ====================== */
 app.post("/admin/unlock", (req, res) => {
-  if (req.headers["x-admin-key"] !== process.env.ADMIN_SECRET) {
+  const key = req.headers["x-admin-key"];
+  const { email } = req.body;
+
+  if (key !== process.env.ADMIN_SECRET) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { email } = req.body;
   paidUsers.add(email);
-
   res.json({ unlocked: email });
 });
 
@@ -95,4 +102,6 @@ app.get("/stats", (req, res) => {
    SERVER
 ====================== */
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("🚀 Backend live"));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
