@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
-import fetch from "node-fetch";
+
 
 dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
