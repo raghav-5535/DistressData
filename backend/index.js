@@ -1,106 +1,85 @@
 import express from "express";
 import cors from "cors";
-import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
+import sgMail from "@sendgrid/mail";
+
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 10000;
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 app.use(cors());
 app.use(express.json());
 
-// ================= CONFIG =================
-const PORT = process.env.PORT || 10000;
-const MONGO_URI = process.env.MONGO_URI;
-const ADMIN_KEY = process.env.ADMIN_KEY || "phoenix-2025";
-
-// ================= DB =================
-let db;
-
-MongoClient.connect(MONGO_URI)
-  .then(client => {
-    db = client.db("distress");
-    console.log("✅ MongoDB Connected");
-  })
-  .catch(err => {
-    console.error("❌ MongoDB error", err);
-  });
-
-// ================= ROUTES =================
-
-// Health check
-app.get("/", (req, res) => {
-  res.send("Phoenix backend running 🚀");
+/* ================= HEALTH ================= */
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
-// -------- SUBSCRIBE --------
+/* ================= SUBSCRIBE ================= */
 app.post("/subscribe", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !email.includes("@")) {
+    return res.status(400).json({ error: "Invalid email" });
+  }
+
   try {
-    const { email } = req.body;
-    if (!email || !email.includes("@")) {
-      return res.status(400).json({ error: "Invalid email" });
-    }
+    // ✅ Store email in SendGrid Contacts (acts as DB)
+    await fetch("https://api.sendgrid.com/v3/marketing/contacts", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contacts: [{ email }]
+      })
+    });
 
-    const existing = await db
-      .collection("subscribers")
-      .findOne({ email });
-
-    if (existing) {
-      return res.json({ message: "Already subscribed" });
-    }
-
-    await db.collection("subscribers").insertOne({
-      email,
-      status: "FREE",
-      createdAt: new Date()
+    // ✅ Optional notification email to you
+    await sgMail.send({
+      to: process.env.FROM_EMAIL,
+      from: process.env.FROM_EMAIL,
+      subject: "🔥 New Phoenix Hotlist Signup",
+      text: `New subscriber: ${email}`
     });
 
     res.json({ success: true });
+
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    console.error("SendGrid error:", err);
+    // never block frontend
+    res.json({ success: true });
   }
 });
 
-// -------- STATS --------
+/* ================= STATS ================= */
 app.get("/stats", async (req, res) => {
-  const totalSubscribers = await db
-    .collection("subscribers")
-    .countDocuments();
+  try {
+    const r = await fetch(
+      "https://api.sendgrid.com/v3/marketing/stats/contacts",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`
+        }
+      }
+    );
 
-  res.json({ totalSubscribers });
-});
+    const d = await r.json();
 
-// ================= ADMIN =================
+    res.json({
+      totalSubscribers: d.contact_count || 0
+    });
 
-// Get all users
-app.get("/admin/users", async (req, res) => {
-  if (req.headers["x-admin-key"] !== ADMIN_KEY) {
-    return res.status(401).json({ error: "Unauthorized" });
+  } catch {
+    res.json({ totalSubscribers: 0 });
   }
-
-  const users = await db
-    .collection("subscribers")
-    .find({})
-    .sort({ createdAt: -1 })
-    .toArray();
-
-  res.json(users);
 });
 
-// Approve user
-app.post("/admin/approve", async (req, res) => {
-  if (req.headers["x-admin-key"] !== ADMIN_KEY) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const { email } = req.body;
-
-  await db.collection("subscribers").updateOne(
-    { email },
-    { $set: { status: "PAID", approvedAt: new Date() } }
-  );
-
-  res.json({ success: true });
-});
-
-// ================= START =================
+/* ================= SERVER ================= */
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
