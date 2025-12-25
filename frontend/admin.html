@@ -1,44 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Phoenix Admin Dashboard</title>
+
   <style>
-    body { font-family: Arial; padding: 40px; }
-    h1 { color: #d4af37; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    td, th { border: 1px solid #ddd; padding: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #0b0b0b;
+      color: white;
+    }
+
+    h1 {
+      color: #d4af37;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background: #111;
+    }
+
+    th, td {
+      border: 1px solid #333;
+      padding: 12px;
+      text-align: left;
+    }
+
+    th {
+      background: #1a1a1a;
+      color: #d4af37;
+    }
+
+    button {
+      padding: 6px 14px;
+      background: #d4af37;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .paid {
+      color: #00ff99;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
-<h1>📊 Distress Admin Dashboard</h1>
-<p>Total Signups: <b id="count">Loading...</b></p>
+<h1>📊 Phoenix Admin Dashboard</h1>
+<p>Total Users: <b id="count">Loading...</b></p>
 
 <table>
   <thead>
-    <tr><th>Email</th></tr>
+    <tr>
+      <th>Email</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr>
   </thead>
   <tbody id="list"></tbody>
 </table>
 
 <script>
-const SECRET = "supersecret123"; // same as ADMIN_SECRET
+const API = "https://distress-backend-sj8y.onrender.com";
+const ADMIN_KEY = "phoenix-2025"; // MUST match Render ENV
 
-fetch(`https://distress-backend-sj8y.onrender.com/admin/stats?key=${SECRET}`)
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById("count").innerText = data.total;
-    const tbody = document.getElementById("list");
-
-    data.contacts.forEach(c => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${c.email}</td>`;
-      tbody.appendChild(tr);
-    });
-  })
-  .catch(() => {
-    document.body.innerHTML = "<h2>Access denied</h2>";
+async function loadUsers() {
+  const res = await fetch(API + "/admin/users", {
+    headers: {
+      "x-admin-key": ADMIN_KEY
+    }
   });
+
+  if (!res.ok) {
+    document.body.innerHTML = "<h2>❌ Unauthorized</h2>";
+    return;
+  }
+
+  const users = await res.json();
+  document.getElementById("count").innerText = users.length;
+
+  const tbody = document.getElementById("list");
+  tbody.innerHTML = "";
+
+  users.forEach(u => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${u.email}</td>
+      <td class="${u.status === "PAID" ? "paid" : ""}">
+        ${u.status}
+      </td>
+      <td>
+        ${
+          u.status === "PAID"
+            ? "—"
+            : `<button onclick="approve('${u.email}')">Approve</button>`
+        }
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+async function approve(email) {
+  await fetch(API + "/admin/approve", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-key": ADMIN_KEY
+    },
+    body: JSON.stringify({ email })
+  });
+
+  loadUsers();
+}
+
+loadUsers();
 </script>
 
 </body>
