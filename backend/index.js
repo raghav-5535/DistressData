@@ -4,21 +4,35 @@ import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
 
 dotenv.config();
-
-const app = express();
-const PORT = process.env.PORT || 10000;
-
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-app.use(cors());
+const app = express();
+
+/* ======================
+   TEMP STORAGE (NO DB)
+====================== */
+const subscribers = [];
+const paidUsers = new Set();
+
+/* ======================
+   MIDDLEWARE
+====================== */
+app.use(cors({
+  origin: "https://capable-ganache-f99392.netlify.app",
+  methods: ["GET", "POST"]
+}));
 app.use(express.json());
 
-/* ================= HEALTH ================= */
+/* ======================
+   HEALTH
+====================== */
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-/* ================= SUBSCRIBE ================= */
+/* ======================
+   SUBSCRIBE
+====================== */
 app.post("/subscribe", async (req, res) => {
   const { email } = req.body;
 
@@ -26,60 +40,59 @@ app.post("/subscribe", async (req, res) => {
     return res.status(400).json({ error: "Invalid email" });
   }
 
-  try {
-    // ✅ Store email in SendGrid Contacts (acts as DB)
-    await fetch("https://api.sendgrid.com/v3/marketing/contacts", {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contacts: [{ email }]
-      })
-    });
+  if (!subscribers.includes(email)) {
+    subscribers.push(email);
 
-    // ✅ Optional notification email to you
+    // notify YOU
     await sgMail.send({
       to: process.env.FROM_EMAIL,
       from: process.env.FROM_EMAIL,
-      subject: "🔥 New Phoenix Hotlist Signup",
-      text: `New subscriber: ${email}`
+      subject: "🔥 New Phoenix Lead",
+      html: `<p>${email}</p>`
     });
+  }
 
-    res.json({ success: true });
+  res.json({ success: true });
+});
 
-  } catch (err) {
-    console.error("SendGrid error:", err);
-    // never block frontend
-    res.json({ success: true });
+/* ======================
+   CHECK ACCESS
+====================== */
+app.post("/access", (req, res) => {
+  const { email } = req.body;
+  if (paidUsers.has(email)) {
+    res.json({ access: "granted" });
+  } else {
+    res.json({ access: "locked" });
   }
 });
 
-/* ================= STATS ================= */
-app.get("/stats", async (req, res) => {
-  try {
-    const r = await fetch(
-      "https://api.sendgrid.com/v3/marketing/stats/contacts",
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`
-        }
-      }
-    );
-
-    const d = await r.json();
-
-    res.json({
-      totalSubscribers: d.contact_count || 0
-    });
-
-  } catch {
-    res.json({ totalSubscribers: 0 });
+/* ======================
+   ADMIN UNLOCK
+====================== */
+app.post("/admin/unlock", (req, res) => {
+  if (req.headers["x-admin-key"] !== process.env.ADMIN_SECRET) {
+    return res.status(403).json({ error: "Forbidden" });
   }
+
+  const { email } = req.body;
+  paidUsers.add(email);
+
+  res.json({ unlocked: email });
 });
 
-/* ================= SERVER ================= */
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+/* ======================
+   STATS
+====================== */
+app.get("/stats", (req, res) => {
+  res.json({
+    totalSubscribers: subscribers.length,
+    paidUsers: paidUsers.size
+  });
 });
+
+/* ======================
+   SERVER
+====================== */
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("🚀 Backend live"));
