@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
+import fs from "fs";
+
 
 dotenv.config();
 
@@ -16,7 +18,18 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 /* ======================
    TEMP DATABASE (MEMORY)
 ====================== */
-const leads = [];
+const DB_FILE = "leads.json";
+
+let leads = [];
+
+if (fs.existsSync(DB_FILE)) {
+  leads = JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+}
+
+function saveDB() {
+  fs.writeFileSync(DB_FILE, JSON.stringify(leads, null, 2));
+}
+
 
 /* ======================
    MIDDLEWARE
