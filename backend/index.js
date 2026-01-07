@@ -84,6 +84,27 @@ app.get("/admin/stats", (req, res) => {
     contacts: leads
   });
 });
+/* ======================
+   PHOENIX BUYER SIGNAL
+====================== */
+app.post("/buyer/yes", (req,res)=>{
+  const {email} = req.body;
+
+  leads.push({
+    email,
+    tag:"BUYER_YES",
+    time:new Date()
+  });
+
+  sgMail.send({
+    to: process.env.FROM_EMAIL,
+    from: process.env.FROM_EMAIL,
+    subject:"💎 Phoenix Buyer YES",
+    html:`<p>${email} clicked YES</p>`
+  });
+
+  res.json({ok:true});
+});
 
 /* ======================
    SERVER
